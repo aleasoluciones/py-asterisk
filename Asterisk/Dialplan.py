@@ -1,9 +1,52 @@
 '''
-Asterisk/Dialplan.py: Asterisk dialplan manager.
+Asterisk/Dialplan.py: Asterisk dialplan manager, with support for
+pbx_config_mgr.
 '''
+
+__author__ = 'David M. Wilson <dw@botanicus.net>'
+__id__ = '$Id$'
 
 import re
 import Asterisk
+
+
+
+
+class PbxConfigActions(object):
+    '''
+    Provide methods for Manager API actions exposed by the pbx_config_mgr
+    module available from <http://botanicus.net/dw/>.
+    '''
+
+    def SetGlobalVar(self, variable, value):
+        'Set global <variable> to <value>.'
+
+        id = self._write_action('SetGlobalVar', {
+            'Variable': variable,
+            'Value': value
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def GetGlobalVar(self, variable, default = Asterisk.Util.Unspecified):
+        '''
+        Return the value of the global <variable>, or <default> if <variable>
+        is not set.
+        '''
+
+        id = self._write_action('GetGlobalVar', { 'Variable': variable })
+
+        try:
+            response = self._translate_response(self.read_response(id))
+
+        except Asterisk.Manager.ActionFailed:
+            if default is Asterisk.Util.Unspecified:
+                raise
+
+            return default
+
+        return response[variable]
 
 
 
