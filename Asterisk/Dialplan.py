@@ -2,6 +2,7 @@
 Asterisk/Dialplan.py: Asterisk dialplan manager.
 '''
 
+import re
 import Asterisk
 
 
@@ -19,7 +20,16 @@ class Context(object):
     'Representation of an Asterisk dialplan context.'
 
     def __init__(self):
-        self.extensions = []
+        self.extens = {}
+
+
+    def add_extension(self, exten):
+        if exten.pattern in self.extens:
+            raise KeyError, 'extension with that pattern already exists.'
+
+
+    def remove_extension(self, exten):
+        del self.extens[exten.pattern]
 
 
 
@@ -33,24 +43,41 @@ class Dialplan(object):
         self.contexts = {}
 
 
+    def add_context(self, context):
+        if context.name in self.contexts:
+            raise KeyError, 'context with that name already exists.'
+
+        self.contexts[context.name] = context
+
+
 
 class Extension(object):
     'Representation of an Asterisk dialplan extension.'
 
-    def __init__(self):
+    pattern_re = re.compile('^([0-9a-z]+|_[0-9a-zX])$')
+
+
+    def pattern_legal(cls, pattern):
+        'Return truth if <pattern> is a legal dialplan pattern.'
+        return cls.pattern_re.match(pattern) is not None
+
+    pattern_legal = classmethod(pattern_legal)
+
+
+    def __init__(self, pattern, actions = None):
+        pattern = str(pattern)
+
+        if not self.pattern_legal(pattern):
+            raise Error('pattern %r is not legal.' % pattern)
+
+        self.pattern = pattern
         self.priorities = []
 
-    def add_priority(self):
-        pass
+
+    def add_action(self, action, priority = None):
+        self.priorities.append((priority, action))
 
 
-
-
-
-
-
-class Foo:
-    pass
 
 
 
@@ -67,7 +94,7 @@ D = Dialplan([
         ],
 
         Extension(101, actions = [
-            Dial('VoicemailMain', '${CALLERID}@${CONTEXT}',
+            VoicemailMain('${CALLERID}',
                 skip = True,
                 on_fail = [
                     Playback('voicemail-unavail'),

@@ -28,9 +28,9 @@ class BaseApplication(object):
 
 
 
-class Dial(Application):
+class Dial(BaseApplication):
     '''
-    The standard Dial() application. Accepts the following options:
+    Dial() application. Accepts the following options:
     
     t  callee_forward      Allow called user to transfer call.
     T  caller_forward      Allow calling user to transfer call.
@@ -75,8 +75,11 @@ class Dial(Application):
         self.channels = channels
         self.options = options
 
+
     def set_option(option, value):
+        'Set <option> to <value>.'
         self.options[option] = value
+
 
     def __repr__(self):
         return '%s.%s(%r, **%r)' % (
@@ -123,6 +126,29 @@ class Dial(Application):
             ''.join(options),
             url
         )
+
+
+
+class VoicemailMain(BaseApplication):
+    '''
+    VoicemailMain() application.
+    '''
+
+    def __init__(self, mailbox, context = None, skip = False):
+        self.mailbox = mailbox
+        self.context = context
+        self.skip = skip
+
+    def __str__(self):
+        S = 'VoicemailMain('
+        if self.skip:
+            S += 's'
+        S += str(self.mailbox)
+        if self.context:
+            S += '@' + str(self.context)
+        return S + ')'
+
+
 
 
 # >>> print Dial([ 'sip/101', 'sip/102' ],
