@@ -123,10 +123,6 @@ class BaseChannel(object, Asterisk.Logging.InstanceLogger):
     This translates to Getvar and Setvar actions on the channel.
     '''
 
-    # Unique object used for testing for an unspecified argument where None is
-    # unsuitable. We use this as it looks nice in pydoc output.
-    _ChannelUnspecified = [None]
-
     def __init__(self, manager, channel_id):
         '''
         Initialise a new Channel object belonging to <channel_id> reachable via
@@ -147,39 +143,39 @@ class BaseChannel(object, Asterisk.Logging.InstanceLogger):
 
     def AbsoluteTimeout(self, timeout):
         'Set the absolute timeout of this channel to <timeout>.'
-        return self.manager.AbsoluteTimeout(str(self), timeout)
+        return self.manager.AbsoluteTimeout(self, timeout)
 
     def ChangeMonitor(self, pathname):
         'Change the monitor filename of this channel to <pathname>.'
-        return self.manager.ChangeMonitor(str(self), pathname)
+        return self.manager.ChangeMonitor(self, pathname)
 
-    def Getvar(self, variable, default = _ChannelUnspecified):
+    def Getvar(self, variable, default = Asterisk.Util.Unspecified):
         '''
         Return the value of this channel's <variable>, or <default> if variable
         is not set.
         '''
-        if default is self._ChannelUnspecified:
-            return self.manager.Getvar(str(self), variable)
-        return self.manager.Getvar(str(self), variable, default)
+        if default is Asterisk.Util.Unspecified:
+            return self.manager.Getvar(self, variable)
+        return self.manager.Getvar(self, variable, default)
 
     def Hangup(self):
         'Hangup this channel.'
-        return self.manager.Hangup(str(self))
+        return self.manager.Hangup(self)
 
     def Monitor(self, pathname, format, mix):
         'Begin monitoring of this channel into <pathname> using <format>.'
-        return self.manager.Monitor(str(self), pathname, format, mix)
+        return self.manager.Monitor(self, pathname, format, mix)
 
     def Redirect(self, context, extension = 's', priority = 1, channel2 = None):
         '''
         Redirect this channel to <priority> of <extension> in <context>,
         optionally bridging with <channel2>.
         '''
-        return self.manager.Redirect(str(self), context, extension, priority, channel2)
+        return self.manager.Redirect(self, context, extension, priority, channel2)
 
     def SetCDRUserField(data, append = False):
         "Append or replace this channel's CDR user field with <data>."
-        return self.manager.SetCDRUserField(str(self), data, append)
+        return self.manager.SetCDRUserField(self, data, append)
 
     def Setvar(self, variable, value):
         'Set the <variable> in this channel to <value>.'
@@ -191,7 +187,7 @@ class BaseChannel(object, Asterisk.Logging.InstanceLogger):
 
     def StopMonitor(self):
         'Stop monitoring of this channel.'
-        return self.manager.StopMonitor(str(self))
+        return self.manager.StopMonitor(self)
 
     def __getitem__(self, key):
         'Fetch <key> as a variable from this channel.'
@@ -207,23 +203,23 @@ class BaseChannel(object, Asterisk.Logging.InstanceLogger):
 class ZapChannel(BaseChannel):
     def ZapDNDoff(self):
         'Disable DND status on this Zapata driver channel.'
-        return self.manager.ZapDNDoff(str(self))
+        return self.manager.ZapDNDoff(self)
 
     def ZapDNDon(self):
         'Enable DND status on this Zapata driver channel.'
-        return self.manager.ZapDNDon(str(self))
+        return self.manager.ZapDNDon(self)
 
     def ZapDialOffhook(self, number):
         'Off-hook dial <number> on this Zapata driver channel.'
-        return self.manager.ZapDialOffhook(str(self), number)
+        return self.manager.ZapDialOffhook(self, number)
 
     def ZapHangup(self):
         'Hangup this Zapata driver channel.'
-        return self.manager.ZapHangup(str(self))
+        return self.manager.ZapHangup(self)
 
     def ZapTransfer(self):
         'Transfer this Zapata driver channel.'
-        return self.manager.ZapTransfer(str(self))
+        return self.manager.ZapTransfer(self)
 
 
 
@@ -246,21 +242,9 @@ class BaseManager(object, Asterisk.Logging.InstanceLogger):
         self.secret = secret
         self.listen_events = listen_events
 
+        # Configure logging:
         self.log = self.getLogger()
         self.log.debug('Initialising.')
-
-
-        # Configure logging:
-
-        def _packetlog(msg, *args, **kwargs):
-            self.log.log(logging.PACKET, msg, *args, **kwargs)
-
-        def _iolog(msg, *args, **kwargs):
-            self.log.log(logging.IO, msg, *args, **kwargs)
-
-        self._iolog = _iolog
-        self._packetlog = _packetlog
-
 
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect(address)
@@ -325,14 +309,14 @@ class BaseManager(object, Asterisk.Logging.InstanceLogger):
             [ lines.append('%s: %s' % item) for item in data.iteritems()
                 if item[1] is not None ]
 
-        self._packetlog('write_action: %r', lines)
+        self.log.packet('write_action: %r', lines)
 
         for line in lines:
             self.file.write(line + '\r\n')
-            self._iolog('_write_action: send %r', line + '\r\n')
+            self.log.io('_write_action: send %r', line + '\r\n')
 
         self.file.write('\r\n')
-        self._iolog('_write_action: send: %r', '\r\n')
+        self.log.io('_write_action: send: %r', '\r\n')
         return id
 
 
@@ -352,7 +336,7 @@ class BaseManager(object, Asterisk.Logging.InstanceLogger):
 
         while True:
             line = self.file.readline().rstrip()
-            self._iolog('_read_response_follows: recv %r', line)
+            self.log.io('_read_response_follows: recv %r', line)
             line_nr += 1
 
             if line_nr == 1 and line.startswith('ActionID: '):
@@ -382,13 +366,13 @@ class BaseManager(object, Asterisk.Logging.InstanceLogger):
 
         while True:
             line = self.file.readline().rstrip()
-            self._iolog('_read_packet: recv %r', line)
+            self.log.io('_read_packet: recv %r', line)
 
             if not line:
                 if not packet:
                     raise GoneAwayError('Asterisk Manager connection has gone away.')
 
-                self._packetlog('_read_packet: %r', packet)
+                self.log.packet('_read_packet: %r', packet)
                 self.log.debug('_read_packet() completed.')
                 return packet
 
@@ -682,11 +666,6 @@ class CoreActions(object):
     engine.
     '''
 
-    # Unique object used for testing for an unspecified argument where None is
-    # unsuitable. We use this as it looks nice in pydoc output.
-    _CoreActionsUnspecified = [None]
-
-
     def AbsoluteTimeout(self, channel, timeout):
         'Set the absolute timeout of <channel> to <timeout>.'
 
@@ -734,7 +713,7 @@ class CoreActions(object):
         return self._translate_response(self.read_response(id))
 
 
-    def Getvar(self, channel, variable, default = _CoreActionsUnspecified):
+    def Getvar(self, channel, variable, default = Asterisk.Util.Unspecified):
         '''
         Return the value of <channel>'s <variable>, or <default> if <variable>
         is not set.
@@ -751,7 +730,7 @@ class CoreActions(object):
         value = response[variable]
 
         if value == '(null)':
-            if default is self._CoreActionsUnspecified:
+            if default is Asterisk.Util.Unspecified:
                 raise KeyError(variable)
             else:
                 self.log.debug('Getvar() returning %r', default)
@@ -1132,7 +1111,7 @@ class ZapataActions(object):
         'Transfer Zapata driver <channel>.'
         # TODO: Does nothing on X100P. What is this for?
 
-        id = self._write_action('ZapTransfer', { 'ZapChannel': str(int(channel)) })
+        id = self._write_action('ZapTransfer', { 'ZapChannel': channel })
         return self._translate_response(self.read_response(id))
 
 
