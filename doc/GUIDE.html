@@ -1,0 +1,216 @@
+<html>
+
+<!-- $Id$ -->
+
+<head>
+<title>py-Asterisk User's Guide</title>
+<link rel="stylesheet" href="docs.css" />
+</head>
+
+<body>
+
+<div id="frontal">
+
+<h1>Asterisk Manager API for Python</h1>
+
+<p>
+<strong>Release 0.1</strong><br />
+4th October, 2004
+</p>
+
+<p>
+<strong>&copy; David M. Wilson
+&lt;<a
+href="mailto:dw-py-asterisk@botanicus.net">dw-py-asterisk@botanicus.net</a>&gt;
+</strong>
+</p>
+
+<p>
+All rights reserved except those specifically granted under the accompanying
+license. Please see the file <code>LICENSE</code> from the source distribution.
+</p>
+
+</div>
+
+
+
+
+<h2>Contents</h2>
+
+<ol>
+<li><a href="#what">What is 'py-Asterisk'?</a></li>
+<li><a href="#what">What is 'py-asterisk'?</a></li>
+<li><a href="#what">What is 'py-asterisk'?</a></li>
+</ol>
+
+
+
+
+<a name="what"></a>
+<h2>What is 'py-Asterisk'?</h2>
+
+
+<div class="section">
+
+    <h3>Asterisk - The Open Source Linux PBX</h3>
+
+    <p>
+    Asterisk is a complete PBX in software. It runs on Linux and provides all
+    of the features you would expect from a PBX and more. Asterisk does voice
+    over IP in three protocols, and can interoperate with almost all
+    standards-based telephony equipment using relatively inexpensive hardware.
+    </p>
+
+    <p>
+    More information on Asterisk can be found at <a
+    href="http://www.asterisk.org/">http://www.asterisk.org/</a>.
+    </p>
+
+
+    <h3>py-Asterisk Python Package</h3>
+
+    <p>
+    The py-Asterisk package is an object-orientated implementation of a manager
+    API client for the Asterisk PBX. The package provides a simple and clean
+    interface to Asterisk, suitable for small utility applications and large
+    scale integration alike.
+    </p>
+
+    <p>
+    The package handles four main operations on your behalf:
+    </p>
+
+    <ul>
+    <li>It handles the Asterisk Manager protocol, and the oddities that
+        implies.</li>
+    <li>It translates Python method calls to equivalent manager actions, and
+        translates any action output back to native Python types.</li>
+    <li>It provides a flexible framework for dispatching manager events by one
+        or more subroutines, synchronously or asynchronously.</li>
+    <li>It provides a single point of view of the Manager API, for easier
+        learning and quicker development, including built-in
+        documentation.</li>
+    </ul>
+</div>
+
+
+
+<a name="how"></a>
+<h2>How do I use the package?</h2>
+
+<div class="section">
+    <p>
+    Please take a moment to use pydoc in the py-Asterisk source directory, and
+    view the class hierarchy and docstrings before continuing, as it will help
+    you understand the following paragraphs.
+    </p>
+
+    <p>
+    If your target application is long-running and needs to keep a note of the
+    state of your telephones, then you will be interested in creating groups of
+    event handlers (<code>EventCollection</code>), and registering those groups
+    with one or more manager connections.
+    </p>
+
+    <p>
+    If however, you simply want to script a repetitive task or write small
+    one-off commands, then you will be interested in the
+    <code>py-asterisk</code> command-line interface, and the synchronous
+    methods provided by the <code>BaseManager</code> family of classes.
+    </p>
+
+
+    <h3>Instanciation</h3>
+
+    <p>
+    Before you create your first <code>Manager</code> object, 
+    </p>
+
+
+    <p>
+    The heart of py-asterisk is the <code>BaseManager</code> object, this
+    contains core routines for talking to an Asterisk daemon and dispatching
+    events received via an <code>on_Event</code> method, which may be
+    subclassed as you please.
+    </p>
+
+
+    <h3>Asynchronous Operation</h3>
+
+    <p>
+    The default <code>on_Event</code> method allows multiple event handlers to
+    be registered for each event type that is sent via the manager API, and
+    unregistered at will.
+    </p>
+
+    <blockquote>
+        <kbd>
+        pbx = ...<br />
+        evs = EventCollection([Status, StatusComplete])<br />
+        pbx.events += evs<br />
+        # ... processing ...<br />
+        pbx.events -= evs
+        </kbd>
+    </blockquote>
+
+
+</div>
+
+<hr>
+Asterisk Manager API interface module for Python.
+
+This module provides an object oriented interface to the Asterisk Manager API,
+whilest embracing some applicable Python concepts:
+
+    - Functionality is split into seperate mix-in classes.
+
+    - Asterisk PBX errors cause fairly granular exceptions.
+
+    - Docstrings are provided for all objects.
+
+    - The module may be used asynchronously if required. It should be suitable
+      for inclusion in a single-threaded GUI.
+
+    - Asterisk data is translated into data stored using Python types, so
+      working with it should be trivial. Through the use of XMLRPCServer or
+      similar, it should be trivial to expose this conversion to other
+      languages.
+
+
+Synchronous Usage:
+
+    Using the Manager or CoreManager objects, or using your own object with the
+    CoreActions mix-in, you may simply call methods of the instanciated object
+    and they will block until all data is available.
+
+
+Asynchronous Usage:
+
+    Declare on_<event> methods for each event you wish to monitor. Using the
+    select module, create an inner loop similar to this:
+
+        class MyManager(Asterisk.Manager):
+            def on_Link(self, event):
+                some_module.do_something(event)
+
+        manager = MyManager()
+        objects_to_watch = [ manager, gui, etc ]
+
+        while True:
+            for obj in select.select(objects_to_watch, [], [])[1]:
+                if obj is manager:
+                    manager.read()
+                else if obj is gui:
+                    gui.handle_event()
+
+
+    If you need to watch many events, or perhaps you would like to monitor
+    everything that is happening, you can define a fall-back event handler.
+    This event handler is used when a more specific one is not found (note use
+    of CoreManager):
+
+        class AllEventsManager(Asterisk.CoreManager):
+            def on_Event(self, event):
+                some_module.do_something(event)
+
+        ...
