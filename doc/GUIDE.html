@@ -14,8 +14,8 @@
 <h1>Asterisk Manager API for Python</h1>
 
 <p>
-<strong>Release 0.1</strong><br />
-4th October, 2004
+<strong>Release 0.1a</strong><br />
+18th October, 2004
 </p>
 
 <p>
@@ -50,9 +50,9 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
     <li>
         <a href="#concepts-basemanager">The BaseManager Class And Derivatives</a></li>
     <li>
-        <a href="#concepts-logging">Logging In py-Asterisk And Your Application</a></li>
-    <li>
         <a href="#concepts-events">How Events Are Handled</a></li>
+    <li>
+        <a href="#concepts-logging">Logging In py-Asterisk And Your Application</a></li>
     </ol>
     </li>
 
@@ -173,7 +173,62 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
     The core point of communication with the Asterisk PBX is encapsulated in a
     class named <code>BaseManager</code>. This contains the core routines for
     talking to an Asterisk PBX and dispatching events received from the PBX.
+    Along with <code>BaseManager</code>, a selection of mix-in classes and
+    some predefined 'mixed in' classes can be found in the
+    <code>Asterisk.Manager</code> module.
     </p>
+
+    <p>
+    At this time, only two mix-in classes exist: <code>CoreActions</code> and
+    <code>ZapataActions</code>. These classes add simple methods for
+    synchronous method calls to the <code>BaseManager</code> object. The mix-in
+    classes provided reflect functionality found in the base Asterisk
+    distribution. However, it is trivial to write your own mix-ins for custom
+    in-house Asterisk modules or add-on modules found on the web, for example,
+    <code>pbx_config_mgr</code>.
+    </p>
+
+    <p>
+    For the majority of applications, you will use the <code>Manager</code>
+    class, which provides <code>BaseManager</code> and the mix-ins all ready
+    for use.
+    </p>
+
+
+    <a name="concepts-events"></a>
+    <h3>How Events Are Handled</h3>
+
+    <p>
+    When listening for events, a loop must be created that waits for events on
+    the <code>BaseManager</code> file descriptor and calls the
+    <code>BaseManager.read()</code> method when the file descriptor becomes
+    ready. A simplistic loop is provided by
+    <code>BaseManager.serve_forever()</code>, which creates an infinite loop
+    running <code>BaseManager.read()</code> until an exception occurs (for
+    example, <code>SystemExit</code> is raised) or until
+    <code>sys.exit()</code> is called.
+    </p>
+
+    <p>
+    In a more complicated application, you will want to use your own loop, or a
+    loop provided by the asynchronous framework that your application is built
+    upon.
+    </p>
+
+
+    <h4>on_Event Method Activation</h4>
+
+    <p>
+    When an event is detected, it is passed to the
+    <code>BaseManager.on_Event()</code> method, which in it's default
+    implementation, searches a list of subscriptions for a matching event
+    handler. It is trivial to replace py-Asterisk's built-in event system with
+    your own, simply by subclassing <code>BaseManager</code> and defining a new
+    <code>on_Event</code> method.
+    </p>
+
+
+    <h4>The Default on_Event Method: call EventCollection.fire()</h4>
 
 </div>
 
