@@ -23,7 +23,7 @@ logging.addLevelName(logging.IO,     'IO')
 
 # Attempt to find the parent logger class using the Python 2.4 API.
 
-if getattr(logging, getLoggerClass, None) is not None:
+if hasattr(logging, 'getLoggerClass'):
     loggerClass = logging.getLoggerClass()
 else:
     loggerClass = logging.Logger
