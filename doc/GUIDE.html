@@ -230,6 +230,77 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
 
     <h4>The Default on_Event Method: call EventCollection.fire()</h4>
 
+    <p>
+    In it's default implementation, <code>on_Event()</code> causes the
+    <code>BaseManager.events</code> instance to be fired, with the
+    <code>BaseManager</code> instance and the event data passed as arguments.
+    This quirkily implements the popular
+    <a href="http://c2.com/cgi/wiki?ObserverPattern">Observer design
+    pattern</a>.
+    </p>
+
+
+    <h4>Introduction To EventCollection</h4>
+
+    <p>
+    At it's heart, the <code>Asterisk.Util.EventCollection</code> is simply a
+    dictionary containing lists of callable references, keyed by the name of
+    the event on which they should be called. Events are fired using the
+    <code>fire(name, *args, **kwargs)</code> method, which searches the
+    dictionary for any event handlers matching <code>&lt;name&gt;</code>, and
+    calls them passing the given positional and keyword arguments.
+    </p>
+
+    <p>
+    The theory behind the EventCollection is fairly simple: when creating an
+    object that wants to listen to a number of events coming from the PBX,
+    create a set of event handlers and add them to an instance-private
+    <code>EventCollection</code>:
+    </p>
+
+    <div class="codeblock">
+        class MyActiveObject:
+        <div class="indented">
+            def BigEvent(self, pbx, event):
+            <div class="indented">
+                'Handle a BigEvent.'<br />
+                <br />
+                global warg<br />
+                warg.foo("bar!")
+            </div>
+
+            def __init__(self):
+            <div class="indented">
+                # Instanciate a new EventCollection for Events we wish<br />
+                # to listen for. The constructor provides shorthand<br />
+                # for registering a list of methods who handle events<br />
+                # with the same name as the method.<br />
+                <br />
+                self.events = EventCollection([ self.BigEvent ])<br />
+                <br />
+                # Alternatively, you can subscribe arbitrary functions<br />
+                # to arbitary event names with this syntax:<br />
+                <br />
+                # First, clear our old subscription:<br />
+                self.events.clear()<br />
+                <br />
+                # Now, re-add using the more explicit syntax:<br />
+                self.events.subscribe('BigEvent', self.BigEvent)
+            </div>
+        </div>
+    </div>
+
+    <p>
+    With this completed, you may can now subscribe an instance of your object
+    to one or more <code>BaseManager</code> instances:
+    </p>
+
+    <div class="codeblock">
+        blah = MyActiveObject()<br />
+        pbx = Asterisk.Manager(*connect_args)<br />
+        <br />
+        pbx.events += blah.events
+    </div>
 </div>
 
 
