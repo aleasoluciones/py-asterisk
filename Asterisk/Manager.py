@@ -116,7 +116,7 @@ class PermissionDenied(BaseException):
 
 
 
-class BaseChannel(object, Asterisk.Logging.InstanceLogger):
+class BaseChannel(Asterisk.Logging.InstanceLogger):
     '''
     Represents a living Asterisk channel, with shortcut methods for operating
     on it. The object acts as a mapping, ie. you may get and set items of it.
@@ -224,7 +224,7 @@ class ZapChannel(BaseChannel):
 
 
 
-class BaseManager(object, Asterisk.Logging.InstanceLogger):
+class BaseManager(Asterisk.Logging.InstanceLogger):
     'Base protocol implementation for the Asterisk Manager API.'
 
     _AST_BANNER = 'Asterisk Call Manager/1.0\r\n'

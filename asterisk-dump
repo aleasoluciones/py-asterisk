@@ -27,7 +27,7 @@ class MyManager(CoreManager):
 
 
 def main2():
-    manager = MyManager(*Config.get_config())
+    manager = MyManager(*Config().get_connection())
 
     try:
         print '#', repr(manager)

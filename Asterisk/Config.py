@@ -11,7 +11,7 @@ import Asterisk
 CONFIG_FILENAME = 'py-asterisk.conf'
 
 CONFIG_PATHNAMES = [
-    os.path.join(os.environ.get('PYASTERISK_CONF', ''), '/py-asterisk.conf'),
+    os.environ.get('PYASTERISK_CONF', ''),
     os.path.join(os.environ.get('HOME', ''), '/.py-asterisk.conf'),
     os.path.join(os.environ.get('USERPROFILE', ''), '/py-asterisk.conf'),
     'py-asterisk.conf',
@@ -31,7 +31,7 @@ class ConfigurationError(Asterisk.BaseException):
 
 
 class Config(object):
-    def _find_config(config_pathname):
+    def _find_config(self, config_pathname):
         '''
         Search the filesystem paths listed in CONFIG_PATHNAMES for a regular file.
         Return the name of the first one found, or <config_pathname>, if it is not
@@ -50,7 +50,7 @@ class Config(object):
         return config_pathname
 
 
-    def refresh():
+    def refresh(self):
         'Read py-Asterisk configuration data from the filesystem.'
 
         try:
@@ -68,19 +68,25 @@ class Config(object):
         if config_pathname is None:
             raise ConfigurationError('could not find a configuration file.')
 
+        self.config_pathname = config_pathname
+        self.refresh()
 
-    def get_connection(self, profile = None):
+
+    def get_connection(self, connection = None):
         '''
         Return an (address, username, secret) argument tuple, suitable for
-        initialising a Manager instance. If <profile> is specified, use
-        specified <profile> instead of the configuration default.
+        initialising a Manager instance. If <connection> is specified, use
+        the named <connection> instead of the configuration default.
         '''
+
+        conf = self.conf
+
 
         try:
             if connection is None:
                 connection = conf.get('py-asterisk', 'default connection')
 
-            items = conf.items('connection: ' + connection)
+            items = dict(conf.items('connection: ' + connection))
 
         except ConfigParser.Error, e:
             raise ConfigurationError(str(e))
