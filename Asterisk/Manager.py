@@ -63,16 +63,10 @@ __id__ = '$Id$'
 
 import socket, time, logging
 from new import instancemethod
-import Asterisk, Asterisk.Util
+import Asterisk, Asterisk.Util, Asterisk.Logging
 
 
 
-# Configure the logging module.
-
-logging.PACKET = logging.DEBUG  - 1
-logging.IO     = logging.PACKET - 1
-logging.addLevelName(logging.PACKET, 'PACKET')
-logging.addLevelName(logging.IO,     'IO')
 
 
 
@@ -122,7 +116,7 @@ class PermissionDenied(BaseException):
 
 
 
-class BaseChannel(object):
+class BaseChannel(object, Asterisk.Logging.InstanceLogger):
     '''
     Represents a living Asterisk channel, with shortcut methods for operating
     on it. The object acts as a mapping, ie. you may get and set items of it.
@@ -141,6 +135,7 @@ class BaseChannel(object):
 
         self.manager = manager
         self.channel_id = channel_id
+        self.log = self.getLogger()
 
     def __str__(self):
         return self.channel_id
@@ -233,29 +228,10 @@ class ZapChannel(BaseChannel):
 
 
 
-class BaseManager(object):
+class BaseManager(object, Asterisk.Logging.InstanceLogger):
     'Base protocol implementation for the Asterisk Manager API.'
 
     _AST_BANNER = 'Asterisk Call Manager/1.0\r\n'
-
-
-    def getLoggerClass(self):
-        '''
-        Return the namespace where debug messages for all instances of this
-        class are sent.
-        '''
-
-        return '%s.%s' % (self.__module__, self.__class__.__name__)
-
-
-    def getLogger(self):
-        '''
-        Return the Logger instance which receives debug messages for this class
-        instance.
-        '''
-
-        log_name = self.getLoggerClass() + '.' + str(id(self))
-        return logging.getLogger(log_name)
 
 
     def __init__(self, address, username, secret, listen_events = True):
@@ -269,7 +245,6 @@ class BaseManager(object):
         self.username = username
         self.secret = secret
         self.listen_events = listen_events
-
 
         self.log = self.getLogger()
         self.log.debug('Initialising.')
