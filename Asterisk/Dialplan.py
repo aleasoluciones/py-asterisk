@@ -49,6 +49,32 @@ class PbxConfigActions(object):
         return response[variable]
 
 
+    def ContextCreate(self, context, registrar = None):
+        '''
+        Create a new context named <context>.
+        '''
+
+        id = self._write_action('ContextCreate', {
+            'Context': context,
+            'Registrar': registrar
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextDestroy(self, context, registrar = None):
+        '''
+        Destroy the named <context>.
+        '''
+
+        id = self._write_action('ContextDestroy', {
+            'Context': context,
+            'Registrar': registrar
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
 
 
 class Error(Asterisk.BaseException):
