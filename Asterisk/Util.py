@@ -10,6 +10,20 @@ import sys, copy
 
 
 
+# This special unique object is used to indicate that an argument has not been
+# specified. It is used where None may be a valid argument value.
+
+class Unspecified(object):
+    'A class to represent an unspecified value that cannot be None.'
+
+    def __repr__(self):
+        return '<Asterisk.Util.Unspecified>'
+
+Unspecified = Unspecified()
+
+
+
+
 class AttributeDict(dict):
     def __getattr__(self, key):
         return self[key]
