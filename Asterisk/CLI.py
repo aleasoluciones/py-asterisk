@@ -4,7 +4,7 @@
 Asterisk/CLI.py: Command-line wrapper around the Asterisk Manager API.
 '''
 
-__author__ = 'David M. Wilson <dw@autosols.com>'
+__author__ = 'David M. Wilson <dw@botanicus.net>'
 __id__ = '$Id$'
 
 import sys, os, inspect
