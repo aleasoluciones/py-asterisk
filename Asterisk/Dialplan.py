@@ -50,9 +50,7 @@ class PbxConfigActions(object):
 
 
     def ContextCreate(self, context, registrar = None):
-        '''
-        Create a new context named <context>.
-        '''
+        'Create a new context named <context>.'
 
         id = self._write_action('ContextCreate', {
             'Context': context,
@@ -63,13 +61,206 @@ class PbxConfigActions(object):
 
 
     def ContextDestroy(self, context, registrar = None):
-        '''
-        Destroy the named <context>.
-        '''
+        'Destroy the named <context>.'
 
         id = self._write_action('ContextDestroy', {
             'Context': context,
             'Registrar': registrar
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextDump(self, context):
+        'Return a complex nested mapping representing <context>.'
+
+        id = self._write_action('ContextDump', { 'Context': context })
+        self._translate_response(self.read_response(id))
+        context = {}
+
+
+        def ExtensionInfo(self, event):
+            if event.Actionid == id:
+                context[event.Exten] = {}
+
+        def ExtensionPriorityInfo(self, event):
+            if event.Actionid != id:
+                return
+
+            e = self.strip_evinfo(event)
+            e.pop('Registrar')
+            e.pop('Context')
+
+            context[e.pop('Exten')][e.pop('Priority')] = e
+
+        def ContextDumpComplete(self, event):
+            if event.Actionid == id:
+                stop_flag[0] = True
+
+
+        events = Util.EventCollection([
+            ExtensionInfo, ExtensionPriorityInfo, ContextDumpComplete
+        ])
+
+        self.events += events
+
+        try:
+            stop_flag = [ False ]
+
+            while stop_flag[0] == False:
+                packet = self._read_packet()
+                self._dispatch_packet(packet)
+
+        finally:
+            self.events -= events
+
+        return context
+
+
+    def ContextExtensionDump(self, context, extension):
+        '''
+        Return a list of (<priority>, <application>, <data>) 3-tuples for the
+        given <extension> in <context>.
+        '''
+
+        id = self._write_action('ContextExtensionDump', {
+            'Context': context,
+            'Exten': extension
+        })
+
+        self._translate_response(self.read_response(id))
+        priorities = []
+
+
+        def ExtensionPriorityInfo(self, event):
+            if event.Actionid == id:
+                priorities.append(
+                    (int(event.Priority), event.Application, event.AppData)
+                ) 
+
+        def ExtensionInfoComplete(self, event):
+            if event.Actionid == id:
+                stop_flag[0] = True
+
+
+        events = Util.EventCollection([
+            ExtensionPriorityInfo, ExtensionInfoComplete
+        ])
+
+        self.events += events
+
+        try:
+            stop_flag = [ False ]
+
+            while stop_flag[0] == False:
+                packet = self._read_packet()
+                self._dispatch_packet(packet)
+
+        finally:
+            self.events -= events
+
+        return context
+
+
+    def ContextAddSwitch(self, context, switch, data = None):
+        'Add <switch> to <context>, optionally with <data>.'
+
+        id = self._write_action('ContextAddSwitch', {
+            'Context': context,
+            'Switch': switch,
+            'Data': data
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextRemoveSwitch(self, context, switch, data = None):
+        'Remove <switch> from <context>, optionally with <data>.'
+
+        id = self._write_action('ContextRemoveSwitch', {
+            'Context': context,
+            'Switch': switch,
+            'Data': data
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextAddExtension(self, context, extension, priority, application,
+    args = [], caller_id = None, replace = False):
+        '''
+        Add a new <priority> to a non-existent or already-existing <extension>
+        in <context>. Cause <priority> to call <application>, optionally with
+        the argument list in <args>.
+        
+        Optionally only match if the incoming CallerID is equal to <caller_id>.
+        Optionally <replace> any existing priority.
+        '''
+
+        id = self._write_action('ContextAddExtension', {
+            'Context': context,
+            'Exten': extension,
+            'Priority': int(priority),
+            'Application': application,
+            'AppData': '|'.join(map(str, args)),
+            'CallerID': caller_id,
+            'Replace': replace and 'yes' or None
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextRemoveExtension(self, context, extension, priority = None):
+        'Remove <extension> from <context>, optionally with <priority>.'
+
+        id = self._write_action('ContextRemoveExtension', {
+            'Context': context,
+            'Exten': extension,
+            'Priority': priority
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextAddInclude(self, context, include):
+        'Include the context named in <include> to <context>.'
+
+        id = self._write_action('ContextAddInclude', {
+            'Context': context,
+            'Include': include
+        )}
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextRemoveInclude(self, context, include):
+        'Remove the included context named <include> from <context>.'
+
+        id = self._write_action('ContextRemoveInclude', {
+            'Context': context,
+            'Include': include
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextAddIgnorePat(self, context, pattern):
+        'Add ignorepat <pattern> to <context>.'
+
+        id = self._write_action('ContextAddIgnorePat', {
+            'Context': context,
+            'Pattern': pattern
+        })
+
+        return self._translate_response(self.read_response(id))
+
+
+    def ContextRemoveIgnorePat(self, context, pattern):
+        'Remove ignorepat <pattern> from <context>.'
+
+        id = self._write_action('ContextRemoveIgnorePat', {
+            'Context': context,
+            'Pattern': pattern
         })
 
         return self._translate_response(self.read_response(id))
