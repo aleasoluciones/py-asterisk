@@ -18,3 +18,8 @@ Todo List For py-Asterisk.
     - Go through and make stuff asynchronous again.
 
     - Create proper documentation.
+
+    - Add 'asterisk-dialplan' tool for command-line editing of the dialplan.
+      Extend pbx_config_mgr to send events when the dialplan is edited via
+      pbx_config_mgr, and make some sort of persistence example using the
+      synchronisation code for saving the changes across invocations.
