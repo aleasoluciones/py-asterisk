@@ -1,0 +1,99 @@
+Not a problem.
+
+There are a number of methods which are still missing, this is one of
+them. I am planning on keeping pbx_config_mgr as clean and minimal as
+possible -- basically, I want it to be able to tell py-asterisk what its
+current state is, then all the fancy trickery and more specific queries
+can be asked of py-asterisk.
+
+Basic plan:
+
+    # Create a Dialplan in py-asterisk:
+
+    from Asterisk.Applications import *
+    from Asterisk.Dialplan import *
+
+    dialplan = Dialplan(
+        desc = 'Unified office shared contexts.')
+
+    exts = Context(name = 'local_extensions')
+
+    exts.add_extension(100, actions = [
+        Dial(['sip/101', 'sip/102', 'sip/103'], connect_time = 30),
+        Congestion()
+    ])
+
+    exts.append_action(100, UserEvent('SomethingBlah'))
+    exts.prepend_action(100, Authenticate()) # some random app or whatever.
+    
+    dialplan.add_context(exts)
+
+
+    # Connect to a few PBXes:
+
+    from Asterisk.Manager import Manager
+
+    pbx1 = Manager(('localhost', 5038), 'dw', 'letmein')
+    pbx2 = Manager(('remotehost', 5038), 'dw', 'letmein')
+
+
+    # Create synchronisation manager for our dialplan object.
+
+    from Asterisk.SyncConfig import *
+
+    syncmgr = SyncManager(dialplan)
+
+    syncmgr.set_merge_policy(
+        # Wipe out extensions.conf configuration:
+        destroy_existing = True,
+
+        # Allow merges to edit pbx_config, but leave res_parking alone:
+        edit_other_registrars = [ 'pbx_config' ]
+    )   
+
+    # Associate a few pbxes. This causes syncmgr to register for
+    # dialplan change events fired by the dialplan object. When a change
+    # occurs to the dialplan, it is populated down to the PBXes without
+    # any extra work. If certain PBXes should have a special config,
+    # they can have their own syncmgrs with their own merge policies.
+
+    syncmgr.add_pbx(pbx1)
+    syncmgr.add_pbx(pbx2)
+
+    syncmgr.synchronise()
+
+
+So here, complicated dialplan queries would be asked of the dialplan
+object, not pbx_config_mgr. SyncManager would also support a merge
+policy that allows the existing PBX config to be populated back into the
+dialplan object. This would be used for building a representation of
+extensions.conf as py-asterisk objects.
+
+If you have a real specific requirement of pbx_config_mgr to ask it
+small questions (like 'what are the names of the contexts') as I suspect
+you might, given you're programming a stateless web app, then perhaps I
+can add that stuff, but as above, I'd like to keep the C code involved
+to a minimum.
+
+Does Zope support object/socket connection persistence? I have only used
+Zope in a very basic way.
+
+
+
+
+> Also, is it possible in your context_dump method to distinguish between items 
+> that have been included from other contexts and things which are being 
+> defined within a context?
+
+Argh, I just checked. It appears that includes are not yet sent in the
+context_dump output. pbx_config_mgr should be considered early alpha. :)
+
+Comments/suggestions this way!
+
+Thanks again,
+
+
+David.
+
+PS: The dialplan syntax is completely ad-hoc and I haven't had time to
+think it through yet. Again, comments/suggestions this way. :)
