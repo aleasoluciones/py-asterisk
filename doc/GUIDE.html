@@ -38,8 +38,24 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
 <h2>Contents</h2>
 
 <ol>
-<li><a href="#what">What is 'py-Asterisk'?</a></li>
-<li><a href="#what">What is 'py-asterisk'?</a></li>
+<li>
+    <a href="#what">What is 'py-Asterisk'?</a></li>
+
+<li>
+    <p>
+    <a href="#concepts">Basic Concepts</a>
+    </p>
+
+    <ol>
+    <li>
+        <a href="#concepts-basemanager">The BaseManager Class And Derivatives</a></li>
+    <li>
+        <a href="#concepts-logging">Logging In py-Asterisk And Your Application</a></li>
+    <li>
+        <a href="#concepts-events">How Events Are Handled</a></li>
+    </ol>
+    </li>
+
 <li><a href="#what">What is 'py-asterisk'?</a></li>
 </ol>
 
@@ -95,6 +111,75 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
 
 
 
+
+<a name="concepts"></a>
+<h2>Basic Concepts</h2>
+
+<div class="section">
+    <p>
+    This package was designed from the ground up in quite a general fashion.
+    The design is intended to allow py-Asterisk to be used by as many different
+    types of application as possible. The initial design was created to target
+    the following scenarios:
+    </p>
+
+    <ul>
+    <li>
+        One-shot synchronous processes performing a small set of operations
+        against a single PBX (for example, the <code>py-asterisk</code>
+        utility).</li>
+
+    <li>
+        Long running synchronous processes whos only function is to monitor a
+        limited set of PBX events and act accordingly (for example, the
+        <code>asterisk-dump</code> utility).</li>
+
+    <li>
+        Long running asynchronous processes whos functions extend beyond
+        management of a single PBX. For example, managing multiple PBXes and
+        acting as an overall service control manager for a custom integration
+        application.</li>
+    </ul>
+
+
+    <p>
+    During the course of development, a number of further design goals arose:
+    </p>
+
+    <ul>
+    <li>
+        Clean integration with RPC bridge packages (for example, XML-RPC).</li>
+
+    <li>
+        Extensive and manageable process logging, with the intention of
+        integrating the logging output into a larger centralised system (for
+        example, for logging crashes and valuable support information for many
+        customer sites).</li>
+
+    <li>
+        The ability to programmatically manage the dialplan of a running PBX,
+        for example, for offloading user status reporting to the Asterisk PBX
+        when your custom software knows a user is not at his desk, or for
+        dynamically configuring new extensions as they are added to your
+        database.</li>
+    </ul>
+
+
+
+    <a name="concepts-basemanager"></a>
+    <h3>The BaseManager Class And Derivatives</h3>
+
+    <p>
+    The core point of communication with the Asterisk PBX is encapsulated in a
+    class named <code>BaseManager</code>. This contains the core routines for
+    talking to an Asterisk PBX and dispatching events received from the PBX.
+    </p>
+
+</div>
+
+
+
+
 <a name="how"></a>
 <h2>How do I use the package?</h2>
 
@@ -127,12 +212,6 @@ license. Please see the file <code>LICENSE</code> from the source distribution.
     </p>
 
 
-    <p>
-    The heart of py-asterisk is the <code>BaseManager</code> object, this
-    contains core routines for talking to an Asterisk daemon and dispatching
-    events received via an <code>on_Event</code> method, which may be
-    subclassed as you please.
-    </p>
 
 
     <h3>Asynchronous Operation</h3>
