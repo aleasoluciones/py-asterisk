@@ -23,3 +23,13 @@ Todo List For py-Asterisk.
       Extend pbx_config_mgr to send events when the dialplan is edited via
       pbx_config_mgr, and make some sort of persistence example using the
       synchronisation code for saving the changes across invocations.
+
+    - Make "complex nested dict" type methods check the incoming event data
+      for their ActionID before acting on it.
+
+    - Create shared functionality for temporarily adding a set of event
+      handlers, and later removing them after a flag is set. This would
+      implement much of the functionality in the "complex nested dict" family
+      of methods (ie. methods that are listening for events as a result of an
+      action they issue).
+
