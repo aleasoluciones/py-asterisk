@@ -60,6 +60,48 @@ class PermissionDenied(BaseException):
 
 
 
+class EventRegistrar(Asterisk.Logging.InstanceLogger):
+    '''
+    Utility class to allow grouping and automatic registration of event
+    handlers with BaseManager instances.
+    '''
+
+    class _ErroringThing:
+        _error = 'Create an Instance of HandlerList in your subclass.'
+
+        def __iadd__(self, val):
+            raise Exception, self._error
+        def __repr__(self):
+            return '<' + self._error + '>'
+
+    event_handlers = _ErroringThing()
+    HandlerList = list
+
+
+    def __init__(self, managers = None):
+        self.log = self.getLogger()
+        self.log.debug('Initialising.')
+
+        if managers is not None:
+            self.register_handlers(managers)
+
+
+    def register_handlers(self, managers):
+        '''
+        Register the event handlers belonging to this instance with the
+        BaseManager instances listed in <managers>.
+        '''
+
+        for manager in managers:
+            for event, handler in self.event_handlers:
+                self.log.debug('Registering %r handler (%r) with %r.',
+                    event, handler, manager)
+
+                manager.register_handler(event, handler)
+ 
+
+
+
 class BaseChannel(Asterisk.Logging.InstanceLogger):
     '''
     Represents a living Asterisk channel, with shortcut methods for operating
