@@ -86,15 +86,28 @@ class EventCollection(Logging.InstanceLogger):
         self.subscriptions[name].remove(handler)
 
 
+    def clear(self):
+        'Destroy all present subscriptions.'
+        self.subscriptions.clear()
+
+
     def fire(self, name, *args, **kwargs):
-        'Fire event <name> passing *<args> and **<kwargs> to subscribers.'
+        '''
+        Fire event <name> passing *<args> and **<kwargs> to subscribers,
+        returning the return value of the last called subscriber.
+        '''
 
         if name not in self.subscriptions:
             return
 
+
+        return_value = None
+
         for subscription in self.subscriptions[name]:
             self.log.debug('calling %r(*%r, **%r)', subscription, args, kwargs)
-            subscription(*args, **kwargs)
+            return_value = subscription(*args, **kwargs)
+
+        return return_value
 
 
     def copy(self):
