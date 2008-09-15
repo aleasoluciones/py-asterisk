@@ -10,11 +10,6 @@ from new import instancemethod
 import Asterisk, Asterisk.Util, Asterisk.Logging
 
 
-
-
-
-
-
 # Your ParentBaseException class should provide a __str__ method that combined
 # _prefix and _error as  ('%s: %s' % (_prefix, _error) or similar.
 
@@ -259,10 +254,17 @@ class BaseManager(Asterisk.Logging.InstanceLogger):
         lines = [ 'Action: ' + action, 'ActionID: ' + id ]
 
         if data is not None:
-            [ lines.append('%s: %s' % item) for item in data.iteritems()
-                if item[1] is not None ]
+            for key, val in data.iteritems():
+                if val is None: continue
+                #print "working on key='%s' val='%s'" % (key, str(val))
+                if key == 'Variable':
+                    lines.extend(['Variable: %s=%s' % (k, str(v)) 
+                                  for k,v in data[key].items() ])
+                else:
+                    lines.append('%s: %s' % (key, val))
 
         self.log.packet('write_action: %r', lines)
+        #print lines
 
         for line in lines:
             self.file.write(line + '\r\n')
@@ -605,53 +607,44 @@ class CoreActions(object):
         return self._translate_response(self.read_response(id))
 
 
-    def Originate(self, channel, context = None, extension = None, priority = None,
-    application = None, data = None, timeout = None, caller_id = None,
-    variable = None, account = None, async = None):
+    def Originate(self, channel, **kw):
         '''
-        Originate(channel, context = .., extension = .., priority = ..[, ...])
+        Originate(channel, context = .., extension = ..[, priority = ..[, ...]])
         Originate(channel, application = ..[, data = ..[, ...]])
 
         Originate a call on <channel>, bridging it to the specified dialplan
         extension (format 1) or application (format 2).
 
             <context>       Dialplan context to bridge with.
-            <extension>     Context extension to bridge with.
+            <exten>         Context extension to bridge with.
             <priority>      Context priority to bridge with.
 
             <application>   Application to bridge with.
             <data>          Application parameters.
 
             <timeout>       Answer timeout for <channel> in milliseconds.
-            <caller_id>     Outgoing channel Caller ID.
-            <variable>      channel variable to set (K=V[|K2=V2[|..]]).
+            <callerID>      Outgoing channel Caller ID.
+            <variable>      channel variables as dict.
             <account>       CDR account code.
-            <async>         Return successfully immediately.
+            <async>         Return successfully immediately (one or zero).
         '''
-
-        has_dialplan = None not in (channel, context, extension)
-        has_application = application is not None
-
-
-        if has_dialplan and has_application:
-            raise ActionFailed('Originate: dialplan and application calling style are mutually exclusive.')
-
-        if not (has_dialplan or has_application):
-            raise ActionFailed('Originate: neither dialplan or application calling style used. Refer to documentation.')
 
         if not channel:
             raise ActionFailed('Originate: you must specify a channel.')
+        
+        dialplan = len([k for k in kw if k in ('context', 'exten') and kw[k] is not None]) == 2
 
+        if dialplan and 'application' in kw:
+            raise ActionFailed('Originate: dialplan and application calling style are mutually exclusive.')
 
-        data = {
-            'Channel': channel,             'Context': context,
-            'Exten': extension,             'Priority': priority,
-            'Application': application,     'Data': data,
-            'Timeout': timeout,             'CallerID': caller_id,
-            'Variable': variable,           'Account': account,
-            'Async': int(bool(async))
-        }
+        if not (dialplan or 'application' in kw):
+            raise ActionFailed('Originate: neither dialplan or application calling style used. Refer to documentation.')
 
+        # Open up Originate to possible new parameters.
+        #print kw.items()
+        data = dict([(k[0].upper() + k[1:], v) for k,v in kw.items()])
+        data['Channel'] = channel
+    
         id = self._write_action('Originate', data)
         return self._translate_response(self.read_response(id))
 
