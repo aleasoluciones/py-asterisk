@@ -76,7 +76,7 @@ class EventCollection(Logging.InstanceLogger):
             subscriptions = self.subscriptions[name]
 
         if handler in subscriptions:
-            raise SubscriptionError
+            raise SubscriptionError('Subscription error.')
 
         subscriptions.append(handler)
 
@@ -155,7 +155,7 @@ class EventCollection(Logging.InstanceLogger):
             raise
 
         return self
-    
+
 
 
 

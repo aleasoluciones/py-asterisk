@@ -361,7 +361,7 @@ class BaseManager(Asterisk.Logging.InstanceLogger):
 
                 self.log.debug('_read_packet() completed.')
                 return packet
-            
+
             val = None
             if line.count(':') == 1 and line[-1] == ':': # Empty field:
                 key, val = line[:-1], ''
@@ -411,7 +411,7 @@ class BaseManager(Asterisk.Logging.InstanceLogger):
             return packet
 
         if packet.Message == 'Permission denied':
-            raise PermissionDenied
+            raise PermissionDenied('Permission denied')
 
         raise ActionFailed(packet.Message)
 
@@ -813,7 +813,7 @@ class CoreActions(object):
 
     def QueuePause(self, queue, interface, paused):
         'Pause <interface> in <queue>.'
-       
+
         id = self._write_action('QueuePause', {
             'Queue': queue,
             'Interface': interface,
@@ -821,7 +821,7 @@ class CoreActions(object):
         })
 
         return self._translate_response(self.read_response(id))
-       
+
 
     def QueueRemove(self, queue, interface):
         'Remove <interface> from <queue>.'
@@ -1041,7 +1041,7 @@ class ZapataActions(object):
             event = self.strip_evinfo(event)
             number = int(event.pop('Channel'))
             channels[number] = event
-    
+
         def ZapShowChannelsComplete(self, event):
             stop_flag[0] = True
 
