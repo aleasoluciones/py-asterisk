@@ -224,7 +224,7 @@ class BaseManager(Asterisk.Logging.InstanceLogger):
         'Read the server banner and attempt to authenticate.'
 
         banner = self.file.readline()
-        if not banner.starts_with(self._AST_BANNER_PREFIX):
+        if not banner.startswith(self._AST_BANNER_PREFIX):
             raise Exception('banner incorrect; got %r, expected one of %r' %\
                             (banner, self._AST_BANNER_PREFIX))
 
