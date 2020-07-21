@@ -536,7 +536,7 @@ class CoreActions(object):
         'Execute console command <command> and return its output lines.'
 
         id = self._write_action('Command', {'Command': command})
-        return self._translate_response(self.read_response(id))['Lines']
+        return self._translate_response(self.read_response(id)).get('Lines') or []
 
 
     def DBGet(self, family, key):
